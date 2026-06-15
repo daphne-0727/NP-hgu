@@ -116,10 +116,71 @@ Matrix W = multiFit_mat(X, Y);
 ## myNP — Numerical Methods
 
 ### Nonlinear Equation Solvers
+
+#### 1변수 — bisection, newtonRaphson
 | Function | Signature |
 |---|---|
 | `bisection` | `bisection(func, a, b, tol)` |
 | `newtonRaphson` | `newtonRaphson(func, dfunc, x0, tol)` |
+
+```cpp
+// 1변수 Newton-Raphson 사용법
+// f(x) = x - cos(x) = 0 풀기
+
+double func1(double x)  { return x - cos(x); }
+double dfunc1(double x) { return 1 + sin(x); }
+
+double sol = newtonRaphson(func1, dfunc1, 3.0, 0.00001);
+// x0=3.0 (초기값), tol=0.00001
+```
+
+#### 다변수 — nonlinearSys
+```
+X(k+1) = X(k) - J^-1 * F(X)
+       = X(k) + H
+where  J*H = -F  (Ax=b 문제)
+```
+
+```cpp
+// [STEP 1] F(X) 정의 — 풀고 싶은 연립방정식
+// f1(x,y) = 0, f2(x,y) = 0
+Matrix myFuncEx1(Matrix Z) {
+    Matrix F = zeros(2, 1);
+    double x = Z.at[0][0];
+    double y = Z.at[1][0];
+
+    F.at[0][0] = y - 0.5*(exp(x/2) + exp(-x/2));   // f1
+    F.at[1][0] = 9*x*x + 25*y*y - 225;              // f2
+    return F;
+}
+
+// [STEP 2] J(X) 정의 — F를 편미분한 Jacobian 행렬
+Matrix myJacobEx1(Matrix Z) {
+    Matrix J = zeros(2, 2);
+    double x = Z.at[0][0];
+    double y = Z.at[1][0];
+
+    J.at[0][0] = -0.25*(exp(x/2) - exp(-x/2));  // df1/dx
+    J.at[0][1] = 1;                               // df1/dy
+    J.at[1][0] = 18*x;                            // df2/dx
+    J.at[1][1] = 50*y;                            // df2/dy
+    return J;
+}
+
+// [STEP 3] nonlinearSys 호출
+double z0[]  = { 0, 3 };                          // 초기값
+Matrix Z0    = arr2Mat(z0, 2, 1);
+Matrix sol   = nonlinearSys(myFuncEx1, myJacobEx1, Z0, 1e-6);
+printMat(sol, "solution");
+freeMat(Z0); freeMat(sol);
+
+// 새 문제가 나오면 myFuncEx1, myJacobEx1만 새로 작성
+// nonlinearSys()는 건드리지 않음
+```
+
+| Function | Description |
+|---|---|
+| `nonlinearSys(Func, Jacob, Z0, tol)` | 다변수 Newton-Raphson |
 
 ### Interpolation
 | Function | Signature |
